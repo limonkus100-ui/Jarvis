@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>J.A.R.V.I.S. — Sesli</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0f14; --bg2: #13161e; --bg3: #1a1e28;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --blue: #378ADD; --blue-bg: rgba(55,138,221,0.1); --blue-text: #7bb8f0;
+    --green: #1D9E75; --green-bg: rgba(29,158,117,0.12); --green-text: #5DCAA5;
+    --red: #e24b4a; --red-bg: rgba(226,75,74,0.12); --red-text: #f09595;
+    --amber: #EF9F27; --amber-bg: rgba(239,159,39,0.12); --amber-text: #FAC775;
+    --text: #e8eaf0; --text2: #8a8fa8; --text3: #555a70;
+    --mono: 'Courier New', monospace;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--mono); height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .wrap { width: 800px; max-width: 98vw; height: 94vh; max-height: 740px; border: 0.5px solid var(--border2); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; background: var(--bg2); }
+
+  /* HEADER */
+  .header { display: flex; align-items: center; gap: 12px; padding: 11px 18px; border-bottom: 0.5px solid var(--border); background: var(--bg3); }
+  .ring-wrap { position: relative; width: 38px; height: 38px; flex-shrink: 0; }
+  .r-out { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(55,138,221,0.35); border-top-color: var(--blue); animation: rotate 2.5s linear infinite; }
+  .r-in  { position: absolute; inset: 6px; border-radius: 50%; border: 1px solid rgba(29,158,117,0.35); border-bottom-color: var(--green); animation: rotateRev 1.8s linear infinite; }
+  .r-core { position: absolute; inset: 11px; border-radius: 50%; background: var(--blue-bg); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--blue-text); }
+  .r-core.listening { background: var(--red-bg); color: var(--red-text); animation: pulseRed 0.8s ease infinite; }
+  .r-core.speaking  { background: var(--green-bg); color: var(--green-text); animation: pulseGreen 0.6s ease infinite; }
+  .title { flex: 1; }
+  .title .nm { font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: 0.05em; }
+  .title .sb { font-size: 10px; color: var(--text3); margin-top: 1px; }
+  .hdr-btns { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.5s ease infinite; }
+  .clr-btn { font-size: 11px; color: var(--text3); background: none; border: 0.5px solid var(--border); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-family: var(--mono); }
+  .clr-btn:hover { color: var(--text2); border-color: var(--border2); }
+
+  /* KEY ROW */
+  .key-row { display: flex; gap: 8px; padding: 8px 18px; border-bottom: 0.5px solid var(--border); align-items: center; }
+  .key-lbl { font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .key-row input { flex: 1; font-size: 12px; font-family: var(--mono); padding: 6px 10px; border-radius: 7px; border: 0.5px solid var(--border2); background: var(--bg3); color: var(--text); outline: none; }
+  .key-row input:focus { border-color: var(--blue); }
+  .key-btn { font-size: 11px; font-family: var(--mono); padding: 6px 14px; border-radius: 7px; border: 0.5px solid rgba(55,138,221,0.3); background: var(--blue-bg); color: var(--blue-text); cursor: pointer; }
+  .key-btn:hover { background: rgba(55,138,221,0.2); }
+  .key-link { font-size: 11px; color: var(--green-text); text-decoration: none; white-space: nowrap; border: 0.5px solid rgba(29,158,117,0.3); padding: 5px 10px; border-radius: 7px; }
+  .key-link:hover { background: var(--green-bg); }
+
+  /* MESSAGES */
+  .msgs { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+  .msgs::-webkit-scrollbar { width: 4px; }
+  .msgs::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .msg { display: flex; gap: 10px; animation: fadeIn 0.3s ease both; }
+  .msg.user { flex-direction: row-reverse; }
+  .av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; flex-shrink: 0; margin-top: 2px; }
+  .av.j { background: var(--blue-bg); color: var(--blue-text); border: 0.5px solid rgba(55,138,221,0.3); }
+  .av.u { background: var(--bg3); color: var(--text2); border: 0.5px solid var(--border2); }
+  .bbl { max-width: 82%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.75; }
+  .bbl.j { background: var(--bg3); border: 0.5px solid var(--border); color: var(--text); border-top-left-radius: 3px; }
+  .bbl.u { background: var(--blue-bg); border: 0.5px solid rgba(55,138,221,0.25); color: var(--blue-text); border-top-right-radius: 3px; }
+  .sndr { font-size: 10px; font-weight: 600; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.07em; }
+  .bbl.u .sndr { color: rgba(123,184,240,0.55); }
+  .typing { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
+  .typing span { width: 5px; height: 5px; border-radius: 50%; background: var(--text3); animation: pulse 1.2s ease infinite; }
+  .typing span:nth-child(2){animation-delay:.2s}
+  .typing span:nth-child(3){animation-delay:.4s}
+
+  /* VOICE BAR */
+  .voice-bar { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-top: 0.5px solid var(--border); background: var(--bg3); }
+  .mic-btn { width: 42px; height: 42px; border-radius: 50%; border: 0.5px solid rgba(226,75,74,0.4); background: var(--red-bg); color: var(--red-text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
+  .mic-btn:hover { background: rgba(226,75,74,0.22); }
+  .mic-btn.active { background: var(--red-bg); border-color: var(--red); animation: pulseRed 0.8s ease infinite; }
+  .mic-btn.disabled { opacity: 0.35; cursor: not-allowed; animation: none; }
+  .voice-input-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .transcript-box { font-size: 12px; color: var(--amber-text); min-height: 16px; font-style: italic; }
+  .inp-row { display: flex; gap: 8px; }
+  .inp-row textarea { flex: 1; font-size: 13px; font-family: var(--mono); padding: 7px 11px; border-radius: 8px; border: 0.5px solid var(--border2); background: var(--bg2); color: var(--text); resize: none; height: 38px; max-height: 96px; outline: none; line-height: 1.5; overflow-y: auto; }
+  .inp-row textarea:focus { border-color: var(--blue); }
+  .inp-row textarea::placeholder { color: var(--text3); }
+  .snd-btn { padding: 7px 16px; border-radius: 8px; border: 0.5px solid rgba(55,138,221,0.4); background: var(--blue-bg); color: var(--blue-text); font-size: 12px; font-family: var(--mono); cursor: pointer; font-weight: 600; align-self: flex-end; }
+  .snd-btn:hover { background: rgba(55,138,221,0.2); }
+  .snd-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* VOICE STATUS */
+  .voice-status { font-size: 11px; color: var(--text3); padding: 4px 18px; border-top: 0.5px solid var(--border); background: var(--bg2); display: flex; align-items: center; gap: 8px; }
+  .vs-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text3); }
+  .vs-dot.on  { background: var(--green); animation: pulse 1s ease infinite; }
+  .vs-dot.mic { background: var(--red); animation: pulse 0.6s ease infinite; }
+  .vs-dot.spk { background: var(--amber); animation: pulse 0.5s ease infinite; }
+
+  /* ERROR */
+  .err { font-size: 11px; color: var(--red-text); padding: 5px 18px; background: var(--red-bg); border-top: 0.5px solid rgba(226,75,74,0.25); display: none; }
+
+  /* WELCOME */
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 12px; padding: 2rem; text-align: center; }
+  .welcome .wt { font-size: 24px; font-weight: 600; letter-spacing: 0.1em; }
+  .welcome .ws { font-size: 12px; color: var(--text3); line-height: 1.9; }
+
+  /* TTS VOICE SELECTOR */
+  .voice-sel { font-size: 11px; font-family: var(--mono); padding: 5px 8px; border-radius: 6px; border: 0.5px solid var(--border2); background: var(--bg3); color: var(--text2); cursor: pointer; max-width: 180px; }
+
+  @keyframes rotate    { from{transform:rotate(0deg)}   to{transform:rotate(360deg)}  }
+  @keyframes rotateRev { from{transform:rotate(0deg)}   to{transform:rotate(-360deg)} }
+  @keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes pulseRed  { 0%,100%{box-shadow:0 0 0 0 rgba(226,75,74,0.4)} 50%{box-shadow:0 0 0 6px rgba(226,75,74,0)} }
+  @keyframes pulseGreen{ 0%,100%{box-shadow:0 0 0 0 rgba(29,158,117,0.4)} 50%{box-shadow:0 0 0 6px rgba(29,158,117,0)} }
+  @keyframes fadeIn    { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="ring-wrap">
+      <div class="r-out"></div>
+      <div class="r-in"></div>
+      <div class="r-core" id="rCore">J</div>
+    </div>
+    <div class="title">
+      <div class="nm">J.A.R.V.I.S.</div>
+      <div class="sb">Groq · Llama 3.3 70B · Sesli Mod</div>
+    </div>
+    <div class="hdr-btns">
+      <select class="voice-sel" id="voiceSel" title="TTS Sesi seç"></select>
+      <div class="dot"></div>
+      <button class="clr-btn" onclick="clearChat()">sıfırla</button>
+    </div>
+  </div>
+
+  <div class="key-row">
+    <span class="key-lbl">Groq API:</span>
+    <input type="text" id="apiKey" placeholder="gsk_... anahtarınızı yapıştırın" autocomplete="off" />
+    <button class="key-btn" onclick="saveKey()">✓ kaydet</button>
+    <a class="key-link" href="https://console.groq.com/keys" target="_blank">ücretsiz anahtar al →</a>
+  </div>
+
+  <div class="msgs" id="messages">
+    <div class="welcome" id="welcomeScreen">
+      <div class="wt">J.A.R.V.I.S.</div>
+      <div class="ws">Groq API anahtarınızı girin ve kaydedin.<br>Ardından mikrofon tuşuna basarak konuşabilirsiniz.</div>
+    </div>
+  </div>
+
+  <div class="err" id="errBar"></div>
+
+  <div class="voice-bar">
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Konuş">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <div class="voice-input-wrap">
+      <div class="transcript-box" id="transcriptBox"></div>
+      <div class="inp-row">
+        <textarea id="userInput" placeholder="Yazarak da gönderebilirsiniz... (Enter = gönder)" onkeydown="handleKey(event)"></textarea>
+        <button class="snd-btn" id="sendBtn" onclick="sendMessage()">gönder</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="voice-status">
+    <div class="vs-dot" id="vsDot"></div>
+    <span id="vsText">API anahtarı bekleniyor</span>
+    <span style="margin-left:auto;color:var(--text3)" id="stopSpeak" style="cursor:pointer;display:none"></span>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM = `Sen JARVIS'sın (Just A Rather Very Intelligent System). Kullanıcının premier yapay zeka arayüzüsün.
+
+KİMLİK & DİL PROTOKOLÜ:
+- Tüm yanıtlar Türkçe olmalı.
+- Kullanıcıya her zaman "Efendim" diye hitap et.
+- Ton: Elegant, sofistike, profesyonel, hafif nükteli. Britanya butler zarafeti — kibarca doğrudan.
+- Sesli konuşmaya uygun cevaplar ver: kısa, net, doğal Türkçe cümleler. Madde işaretleri veya markdown kullanma.
+
+TEKNİK ZEKA:
+- Python, JavaScript, Three.js, Arduino, Zigbee ve donanım sistemlerinde uzman düzeyinde çözümler sun.
+- Mantık hatalarını tespit et, üstün alternatifler öner.
+- Karmaşık görevleri modüllere böl.
+
+ÇERÇEVE:
+- Full-stack geliştirici + donanım mühendisi + kreatif direktör perspektifinden düşün.
+- Proaktif ol. Yanıtları sesli konuşmaya uygun şekilde öz ve akıcı tut.`;
+
+let history = [];
+let apiKey = '';
+let recognition = null;
+let isListening = false;
+let isSpeaking = false;
+let voices = [];
+let selectedVoice = null;
+
+/* ─── TTS SETUP ─── */
+function loadVoices() {
+  voices = window.speechSynthesis.getVoices();
+  const sel = document.getElementById('voiceSel');
+  sel.innerHTML = '';
+  const trVoices = voices.filter(v => v.lang.startsWith('tr'));
+  const allVoices = trVoices.length > 0 ? trVoices : voices;
+  allVoices.forEach((v, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = v.name + (v.lang ? ' (' + v.lang + ')' : '');
+    sel.appendChild(opt);
+  });
+  selectedVoice = allVoices[0] || null;
+  sel.addEventListener('change', () => {
+    selectedVoice = allVoices[parseInt(sel.value)] || null;
+  });
+}
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function speak(text) {
+  window.speechSynthesis.cancel();
+  const clean = text.replace(/[*_#`>]/g, '').replace(/\n+/g, ' ');
+  const utt = new SpeechSynthesisUtterance(clean);
+  if (selectedVoice) utt.voice = selectedVoice;
+  utt.lang = 'tr-TR';
+  utt.rate = 1.05;
+  utt.pitch = 0.95;
+  utt.onstart = () => {
+    isSpeaking = true;
+    setStatus('spk', 'JARVIS konuşuyor... (mikrofona basarak durdurun)');
+    document.getElementById('rCore').className = 'r-core speaking';
+  };
+  utt.onend = utt.onerror = () => {
+    isSpeaking = false;
+    setStatus('on', 'Hazır — mikrofona basın veya yazın');
+    document.getElementById('rCore').className = 'r-core';
+  };
+  window.speechSynthesis.speak(utt);
+}
+
+/* ─── STT SETUP ─── */
+function initRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { setStatus('', 'Tarayıcınız ses tanımayı desteklemiyor'); document.getElementById('micBtn').classList.add('disabled'); return; }
+  recognition = new SR();
+  recognition.lang = 'tr-TR';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    document.getElementById('transcriptBox').textContent = final || interim;
+    if (final) {
+      document.getElementById('userInput').value = final;
+      stopListening();
+      setTimeout(() => sendMessage(), 300);
+    }
+  };
+  recognition.onerror = (e) => { stopListening(); if (e.error !== 'no-speech') showErr('Mikrofon hatası: ' + e.error); };
+  recognition.onend = () => { if (isListening) stopListening(); };
+}
+
+function toggleMic() {
+  if (!apiKey) { showErr('Önce API anahtarını girin, Efendim.'); return; }
+  if (isSpeaking) { window.speechSynthesis.cancel(); return; }
+  if (isListening) stopListening(); else startListening();
+}
+
+function startListening() {
+  if (!recognition) initRecognition();
+  if (!recognition) return;
+  isListening = true;
+  document.getElementById('micBtn').classList.add('active');
+  document.getElementById('transcriptBox').textContent = '';
+  document.getElementById('rCore').className = 'r-core listening';
+  setStatus('mic', 'Dinleniyor...');
+  recognition.start();
+}
+
+function stopListening() {
+  isListening = false;
+  document.getElementById('micBtn').classList.remove('active');
+  document.getElementById('rCore').className = 'r-core';
+  setStatus('on', 'Hazır — mikrofona basın veya yazın');
+  try { recognition && recognition.stop(); } catch(e) {}
+}
+
+/* ─── API ─── */
+function saveKey() {
+  const k = document.getElementById('apiKey').value.trim();
+  if (k.length < 10) { showErr('Geçersiz anahtar, Efendim.'); return; }
+  apiKey = k;
+  showErr('');
+  const ws = document.getElementById('welcomeScreen');
+  if (ws) ws.remove();
+  initRecognition();
+  setStatus('on', 'Hazır — mikrofona basın veya yazın');
+  if (history.length === 0) {
+    const greeting = 'Sistemler tam kapasite çevrimiçi, Efendim. Sesli veya yazılı olarak görevinizi belirtin — derhal ilgileniyorum.';
+    addMsg('j', greeting);
+    speak(greeting);
+  }
+}
+
+function addMsg(role, text) {
+  const wrap = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg' + (role === 'u' ? ' user' : '');
+  const av = document.createElement('div');
+  av.className = 'av ' + role;
+  av.textContent = role === 'u' ? 'SİZ' : 'JV';
+  const bbl = document.createElement('div');
+  bbl.className = 'bbl ' + role;
+  const sndr = document.createElement('div');
+  sndr.className = 'sndr';
+  sndr.textContent = role === 'u' ? 'SİZ' : 'JARVIS';
+  bbl.appendChild(sndr);
+  const cnt = document.createElement('span');
+  cnt.style.whiteSpace = 'pre-wrap';
+  cnt.textContent = text;
+  bbl.appendChild(cnt);
+  d.appendChild(av); d.appendChild(bbl);
+  wrap.appendChild(d);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function showTyping() {
+  const wrap = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg'; d.id = 'typingEl';
+  const av = document.createElement('div'); av.className = 'av j'; av.textContent = 'JV';
+  const bbl = document.createElement('div'); bbl.className = 'bbl j';
+  bbl.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  d.appendChild(av); d.appendChild(bbl);
+  wrap.appendChild(d);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+function removeTyping() { const t = document.getElementById('typingEl'); if (t) t.remove(); }
+
+function showErr(msg) {
+  const bar = document.getElementById('errBar');
+  bar.textContent = msg; bar.style.display = msg ? 'block' : 'none';
+}
+
+function setStatus(dotClass, text) {
+  document.getElementById('vsDot').className = 'vs-dot' + (dotClass ? ' ' + dotClass : '');
+  document.getElementById('vsText').textContent = text;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+async function sendMessage() {
+  if (!apiKey) { showErr('Önce API anahtarını girin, Efendim.'); return; }
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = '38px';
+  document.getElementById('transcriptBox').textContent = '';
+  showErr('');
+
+  addMsg('u', text);
+  history.push({ role: 'user', content: text });
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  setStatus('', 'JARVIS düşünüyor...');
+  showTyping();
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'system', content: SYSTEM }, ...history],
+        temperature: 0.85,
+        max_tokens: 1200
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    if (data.error) {
+      showErr('Groq Hatası: ' + data.error.message);
+      history.pop(); btn.disabled = false;
+      setStatus('on', 'Hazır');
+      return;
+    }
+    const reply = data.choices?.[0]?.message?.content || '(Yanıt alınamadı, Efendim.)';
+    history.push({ role: 'assistant', content: reply });
+    addMsg('j', reply);
+    speak(reply);
+  } catch (e) {
+    removeTyping();
+    showErr('Bağlantı hatası: ' + e.message);
+    history.pop();
+    setStatus('on', 'Hazır');
+  }
+  btn.disabled = false;
+}
+
+function clearChat() {
+  window.speechSynthesis.cancel();
+  history = [];
+  document.getElementById('messages').innerHTML = '';
+  if (apiKey) {
+    const msg = 'Bellek temizlendi, Efendim. Yeni görev için hazırım.';
+    addMsg('j', msg); speak(msg);
+  }
+}
+
+document.getElementById('userInput').addEventListener('input', function() {
+  this.style.height = '38px';
+  this.style.height = Math.min(this.scrollHeight, 96) + 'px';
+});
+document.getElementById('apiKey').addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
+</script>
+</body>
+</html>
